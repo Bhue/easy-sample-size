@@ -15,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <a href="/" className="font-semibold text-lg">Easy Sample Size</a>
             <nav className="flex items-center gap-4 text-sm">
               <a href="/calculators" className="hover:underline">Calculators</a>
+              <a href="/wizard" className="hover:underline">Wizard</a>
               <a href="/glossary" className="hover:underline">Glossary</a>
               <a href="/about" className="hover:underline">About</a>
             </nav>
@@ -28,4 +29,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   )
 }
-
