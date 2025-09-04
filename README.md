@@ -37,11 +37,23 @@ See docs/methods.md for formulas and assumptions.
 
 - The app includes an optional, consent-based telemetry system to log anonymous calculator inputs and wizard answers to improve UX.
 - Users are prompted to opt in. If declined, no data is sent.
-- To enable server-side forwarding, set `TELEMETRY_WEBHOOK_URL` in your Vercel project or `.env`.
+- To persist events in a database, set `DATABASE_URL` to a Postgres instance (Vercel Postgres, Neon, Supabase). Prisma is configured.
+- To enable server-side forwarding, set `TELEMETRY_WEBHOOK_URL` (optional).
 - Events are posted as JSON to `/api/telemetry` and forwarded to the webhook. No IP addresses are stored by the app; user agent is included.
 
 Example environment:
 
 ```
+DATABASE_URL=postgresql://user:password@host:5432/dbname
 TELEMETRY_WEBHOOK_URL=https://your-ingestion-endpoint.example.com/collect
 ```
+
+### Database setup (Prisma)
+
+1) Provision a Postgres database (Vercel Postgres/Neon/Supabase) and set `DATABASE_URL` locally and in Vercel.
+2) Create tables via Prisma:
+   - Locally: `npx prisma migrate dev --name init` (requires a running DB)
+   - Production: `npx prisma migrate deploy` (e.g., `vercel exec -- npx prisma migrate deploy`)
+3) Generate client (done automatically on install): `npx prisma generate`
+
+Events are stored in table `Event` with columns: `id`, `ts` (BigInt), `type`, `slug`, `page`, `sessionId`, `ua`, `payload` (JSONB), `createdAt`.
