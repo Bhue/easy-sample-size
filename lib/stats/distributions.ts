@@ -169,6 +169,65 @@ export function regIncompleteBeta(x: number, a: number, b: number): number {
   return result
 }
 
+// Regularized lower incomplete gamma P(a,x) using series or continued fraction
+export function regIncompleteGamma(a: number, x: number): number {
+  if (x <= 0) return 0
+  if (x < a + 1) {
+    // series representation
+    let ap = a
+    let sum = 1 / a
+    let del = sum
+    for (let n = 1; n <= 200; n++) {
+      ap += 1
+      del *= x / ap
+      sum += del
+      if (Math.abs(del) < Math.abs(sum) * 1e-14) break
+    }
+    return sum * Math.exp(-x + a * Math.log(x) - gammaln(a))
+  } else {
+    // continued fraction (Lentz)
+    const MAXIT = 200
+    const EPS = 1e-14
+    const FPMIN = 1e-300
+    let b0 = x + 1 - a
+    let c = 1 / FPMIN
+    let d = 1 / b0
+    let h = d
+    for (let i = 1; i <= MAXIT; i++) {
+      const an = -i * (i - a)
+      b0 += 2
+      d = an * d + b0
+      if (Math.abs(d) < FPMIN) d = FPMIN
+      c = b0 + an / c
+      if (Math.abs(c) < FPMIN) c = FPMIN
+      d = 1 / d
+      const del = d * c
+      h *= del
+      if (Math.abs(del - 1) < EPS) break
+    }
+    const Q = Math.exp(-x + a * Math.log(x) - gammaln(a)) * h
+    return 1 - Q
+  }
+}
+
+export function chi2CDF(x: number, k: number): number {
+  if (x <= 0) return 0
+  return regIncompleteGamma(k / 2, x / 2)
+}
+
+export function ncx2CDF(x: number, k: number, lambda: number): number {
+  // Poisson mixture of central chi-square
+  const half = lambda / 2
+  let sum = 0
+  let term = Math.exp(-half)
+  for (let i = 0; i < 5000; i++) {
+    sum += term * chi2CDF(x, k + 2 * i)
+    term *= half / (i + 1)
+    if (term < 1e-12) break
+  }
+  return sum
+}
+
 export function fCDF(F: number, df1: number, df2: number): number {
   if (F <= 0) return 0
   const x = (df1 * F) / (df1 * F + df2)
@@ -193,4 +252,3 @@ export function ncfCDF(F: number, df1: number, df2: number, lambda: number): num
   }
   return sum
 }
-
