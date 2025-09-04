@@ -11,6 +11,7 @@ import * as corr from '../../../lib/calculators/correlation'
 import * as anova from '../../../lib/calculators/anova_oneway'
 import * as logrank from '../../../lib/calculators/logrank'
 import * as cluster from '../../../lib/calculators/cluster_deff'
+import { logEvent } from '../../../lib/telemetry'
 import * as oneprop from '../../../lib/calculators/one_proportion'
 import * as chisq from '../../../lib/calculators/chi_square'
 import * as regGlobal from '../../../lib/calculators/regression_global'
@@ -77,6 +78,11 @@ function TwoMeansCalc() {
       return undefined
     }
   }, [alpha, power, d, k, tail])
+  // Telemetry: on result change
+  useEffect(() => {
+    if (!result) return
+    logEvent({ type: 'calc:two-means', slug: 'two-means', payload: { alpha, power, d, k, tail, n1: result.n1, n2: result.n2 } })
+  }, [alpha, power, d, k, tail, result?.n1, result?.n2])
   const curve = useMemo(() => {
     const pts = [] as { x: number; power: number }[]
     for (let n = 10; n <= 300; n += 10) {
@@ -132,6 +138,10 @@ function PairedMeansCalc() {
   const result = useMemo(() => {
     try { return pairedMeans.aprioriN({ alpha: +alpha, power: +power, dz: +dz, tail }) } catch { return undefined }
   }, [alpha, power, dz, tail])
+  useEffect(() => {
+    if (!result) return
+    logEvent({ type: 'calc:paired-means', slug: 'paired-means', payload: { alpha, power, dz, tail, n: result.n } })
+  }, [alpha, power, dz, tail, result?.n])
   const curve = useMemo(() => {
     const pts = [] as { x: number; power: number }[]
     for (let n = 10; n <= 300; n += 5) {
@@ -180,6 +190,10 @@ function TwoPropsCalc() {
   const result = useMemo(() => {
     try { return twoProps.aprioriN({ alpha: +alpha, power: +power, p1: +p1, p2: +p2, tail, allocationRatio: +k }) } catch { return undefined }
   }, [alpha, power, p1, p2, tail, k])
+  useEffect(() => {
+    if (!result) return
+    logEvent({ type: 'calc:two-proportions', slug: 'two-proportions', payload: { alpha, power, p1, p2, tail, k, n1: result.n1, n2: result.n2 } })
+  }, [alpha, power, p1, p2, tail, k, result?.n1, result?.n2])
   const curve = useMemo(() => {
     const pts = [] as { x: number; power: number }[]
     for (let n = 50; n <= 1000; n += 25) {
@@ -234,6 +248,10 @@ function CorrelationCalc() {
   const result = useMemo(() => {
     try { return corr.aprioriN({ alpha: +alpha, power: +power, r: +r, tail }) } catch { return undefined }
   }, [alpha, power, r, tail])
+  useEffect(() => {
+    if (!result) return
+    logEvent({ type: 'calc:correlation', slug: 'correlation', payload: { alpha, power, r, tail, n: result.n } })
+  }, [alpha, power, r, tail, result?.n])
   const curve = useMemo(() => {
     const pts = [] as { x: number; power: number }[]
     for (let n = 10; n <= 300; n += 5) {
@@ -280,6 +298,10 @@ function ANOVACalc() {
   const result = useMemo(() => {
     try { return anova.aprioriN({ alpha: +alpha, power: +power, k: +k, f: +f }) } catch { return undefined }
   }, [alpha, power, k, f])
+  useEffect(() => {
+    if (!result) return
+    logEvent({ type: 'calc:anova-oneway', slug: 'anova-oneway', payload: { alpha, power, k, f, N: result.N } })
+  }, [alpha, power, k, f, result?.N])
   const curve = useMemo(() => {
     const pts = [] as { x: number; power: number }[]
     for (let N = +k * 2; N <= 400; N += 5) {
@@ -322,6 +344,10 @@ function LogrankCalc() {
   const result = useMemo(() => {
     try { return logrank.eventsRequired({ alpha: +alpha, power: +power, HR: +HR, allocationRatio: +k, eventFraction: +e }) } catch { return undefined }
   }, [alpha, power, HR, k, e])
+  useEffect(() => {
+    if (!result) return
+    logEvent({ type: 'calc:logrank', slug: 'logrank', payload: { alpha, power, HR, k, e, events: result.events, totalN: result.totalN } })
+  }, [alpha, power, HR, k, e, result?.events, result?.totalN])
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Log-rank (two-arm)</h1>
@@ -360,6 +386,10 @@ function ClusterCalc() {
   const result = useMemo(() => {
     try { return cluster.adjustForClustering({ nIndivPerArm: +nIndiv, m: +m, ICC: +ICC, CV: +CV }) } catch { return undefined }
   }, [nIndiv, m, ICC, CV])
+  useEffect(() => {
+    if (!result) return
+    logEvent({ type: 'calc:cluster-deff', slug: 'cluster-deff', payload: { nIndiv, m, ICC, CV, DEFF: result.DEFF, nAdj: result.nAdjPerArm } })
+  }, [nIndiv, m, ICC, CV, result?.DEFF, result?.nAdjPerArm])
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Cluster design (DEFF, ICC)</h1>
@@ -393,6 +423,7 @@ function OnePropCalc() {
   const [p0, setP0] = useState('0.5')
   const [tail, setTail] = useState<'two-sided' | 'one-sided'>('two-sided')
   const result = useMemo(() => { try { return oneprop.aprioriN({ alpha: +alpha, power: +power, p: +p, p0: +p0, tail }) } catch { return undefined } }, [alpha, power, p, p0, tail])
+  useEffect(() => { if (result) logEvent({ type: 'calc:one-proportion', slug: 'one-proportion', payload: { alpha, power, p, p0, tail, n: result.n } }) }, [alpha, power, p, p0, tail, result?.n])
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">One Proportion vs p0</h1>
@@ -430,6 +461,7 @@ function ChiGOFCalc() {
   const [m, setM] = useState('4')
   const [w, setW] = useState('0.2')
   const result = useMemo(() => { try { return chisq.aprioriGOF({ alpha: +alpha, power: +power, m: +m, w: +w }) } catch { return undefined } }, [alpha, power, m, w])
+  useEffect(() => { if (result) logEvent({ type: 'calc:chi-gof', slug: 'chi-gof', payload: { alpha, power, m, w, N: result.N } }) }, [alpha, power, m, w, result?.N])
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Chi-square Goodness-of-fit</h1>
@@ -462,6 +494,7 @@ function ChiRxCCalc() {
   const [c, setC] = useState('2')
   const [w, setW] = useState('0.2')
   const result = useMemo(() => { try { return chisq.aprioriRxC({ alpha: +alpha, power: +power, r: +r, c: +c, w: +w }) } catch { return undefined } }, [alpha, power, r, c, w])
+  useEffect(() => { if (result) logEvent({ type: 'calc:chi-rxc', slug: 'chi-rxc', payload: { alpha, power, r, c, w, N: result.N } }) }, [alpha, power, r, c, w, result?.N])
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Chi-square RxC</h1>
@@ -494,6 +527,7 @@ function RegGlobalCalc() {
   const [p, setP] = useState('3')
   const [f2, setF2] = useState('0.15')
   const result = useMemo(() => { try { return regGlobal.aprioriN({ alpha: +alpha, power: +power, p: +p, f2: +f2 }) } catch { return undefined } }, [alpha, power, p, f2])
+  useEffect(() => { if (result) logEvent({ type: 'calc:regression-global', slug: 'regression-global', payload: { alpha, power, p, f2, N: result.N } }) }, [alpha, power, p, f2, result?.N])
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Multiple Regression (global R²)</h1>
@@ -528,6 +562,7 @@ function PoissonCalc() {
   const [rate2, setRate2] = useState('0.35')
   const [k, setK] = useState('1')
   const result = useMemo(() => { try { return poisson.aprioriN({ alpha: +alpha, power: +power, exposure1: +exp1, exposure2: +exp2, rate1: +rate1, rate2: +rate2, allocationRatio: +k }) } catch { return undefined } }, [alpha, power, exp1, exp2, rate1, rate2, k])
+  useEffect(() => { if (result) logEvent({ type: 'calc:poisson', slug: 'poisson', payload: { alpha, power, exp1, exp2, rate1, rate2, k, n1: result.n1, n2: result.n2 } }) }, [alpha, power, exp1, exp2, rate1, rate2, k, result?.n1, result?.n2])
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Poisson Regression (rate ratio)</h1>
@@ -563,6 +598,7 @@ function EquivMeansCalc() {
   const [d0, setD0] = useState('0.5')
   const [k, setK] = useState('1')
   const result = useMemo(() => { try { return tost.aprioriN({ alpha: +alpha, power: +power, d0: +d0, allocationRatio: +k, type: 'equivalence' }) } catch { return undefined } }, [alpha, power, d0, k])
+  useEffect(() => { if (result) logEvent({ type: 'calc:equiv-means', slug: 'equiv-means', payload: { alpha, power, d0, k, n1: result.n1, n2: result.n2 } }) }, [alpha, power, d0, k, result?.n1, result?.n2])
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Equivalence — Two Means (TOST)</h1>
@@ -582,6 +618,7 @@ function EquivMeansCalc() {
             <div>Total = <strong>{result?.total ?? '-'}</strong></div>
             <div>Achieved power ≈ <strong>{result ? result.power.toFixed(3) : '-'}</strong></div>
           </ResultCard>
+function OnePropCalc() {
         </div>
       </div>
       <ExportButtons />

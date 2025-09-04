@@ -1,5 +1,6 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
+import { logEvent } from '../lib/telemetry'
 
 type Recommendation = { label: string; slug?: string; note?: string }
 
@@ -195,6 +196,7 @@ export function DecisionWizard() {
     const next = node[dir]
     if (!next) return
     setStack(s => [...s, next])
+    logEvent({ type: 'wizard:answer', page: '/wizard', payload: { node: node.id, answer: dir, next } })
   }
   const back = () => {
     setStack(s => (s.length > 1 ? s.slice(0, -1) : s))
@@ -245,4 +247,3 @@ export function DecisionWizard() {
     </div>
   )
 }
-

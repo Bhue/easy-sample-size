@@ -33,3 +33,15 @@ Features:
 
 See docs/methods.md for formulas and assumptions.
 
+## Telemetry (optional, privacy-friendly)
+
+- The app includes an optional, consent-based telemetry system to log anonymous calculator inputs and wizard answers to improve UX.
+- Users are prompted to opt in. If declined, no data is sent.
+- To enable server-side forwarding, set `TELEMETRY_WEBHOOK_URL` in your Vercel project or `.env`.
+- Events are posted as JSON to `/api/telemetry` and forwarded to the webhook. No IP addresses are stored by the app; user agent is included.
+
+Example environment:
+
+```
+TELEMETRY_WEBHOOK_URL=https://your-ingestion-endpoint.example.com/collect
+```

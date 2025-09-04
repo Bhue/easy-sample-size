@@ -1,5 +1,6 @@
 import './globals.css'
 import React from 'react'
+import { TelemetryConsent } from '../components/TelemetryConsent'
 
 export const metadata = {
   title: 'Easy Sample Size',
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
         <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+        <TelemetryConsent />
         <footer className="mt-12 border-t border-slate-200 dark:border-slate-800">
           <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-slate-500">© {new Date().getFullYear()} Easy Sample Size</div>
         </footer>
